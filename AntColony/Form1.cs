@@ -1,13 +1,16 @@
-﻿using System;
+﻿using K_means;
+using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace AntColony
 {
     public partial class Form1 : Form
     {
-        AntColony antColony;
-        int numCities, numAnts, alpha, beta;
+        AntAlgorithm antColony;
+        int numCities, numAnts, alpha, beta, numIter;
         double Q, rho;
+        int[][] dists;
         public Form1()
         {
             InitializeComponent();
@@ -28,14 +31,40 @@ namespace AntColony
 
         private void RunAntColony()
         {
-            antColony = new AntColony(numCities, numAnts, alpha, beta, Q, rho);
+            if(comboBox1.SelectedIndex == 0) 
+                antColony = new AntAlgorithm(numCities, numAnts, alpha, beta, Q, rho, numIter);
+            else
+                antColony = new AntAlgorithm(dists.Length, numAnts, alpha, beta, Q, rho, numIter, dists);
             int[][] graph = antColony.GetGraph();
             ShowGraph(graph);
             richTextBoxResAlg.Text = "";
             foreach (var bestLen in antColony.Run())
-                richTextBoxResAlg.Text += "New Best Length of " + bestLen.ToString() + "\n";
+                richTextBoxResAlg.Text += "Новая лучшая длина пути: " + bestLen.ToString() + "\n";
             var BestTrail = antColony.GetBest();
             ShowAnswer(BestTrail);
+        }
+
+        private void InitializeDists(List<string[]> data)
+        {
+            dists = new int[data.Count][];
+            for (int i = 0; i < data.Count; i++)
+            {
+                dists[i] = new int[data[i].Length];
+                for (int j = 0; j < data[i].Length; j++)
+                    dists[i][j] = int.Parse(data[i][j]);
+            }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (comboBox1.SelectedIndex == 1)
+            {
+                var data = FileReader.Read("Graph.txt");
+                InitializeDists(data);
+                textBoxNumCities.Enabled = false;
+            }
+            else
+                textBoxNumCities.Enabled = true;
         }
 
         private void ShowGraph(int[][] graph)
@@ -55,7 +84,7 @@ namespace AntColony
 
         private void ShowAnswer((double, int[]) bestTrail)
         {
-            richTextBoxResAlg.Text += "Best trail length = " + bestTrail.Item1.ToString() + "\n" + "Best Trail way:";
+            richTextBoxResAlg.Text += "Лучшая длина пути = " + bestTrail.Item1.ToString() + "\n" + "Лучший путь:";
             for (int i = 0; i < bestTrail.Item2.Length; i++)
             {
                 richTextBoxResAlg.Text += (bestTrail.Item2[i]+1).ToString() + ";";
@@ -73,6 +102,7 @@ namespace AntColony
             beta = Int32.Parse(textBoxBeta.Text);
             Q = Double.Parse(textBoxQ.Text);
             rho = Double.Parse(textBoxRho.Text);
+            numIter = Int32.Parse(textBoxNumIter.Text);
             CheckCorrectInputParams();
         }
 
